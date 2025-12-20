@@ -1,0 +1,31 @@
+# Từ điển Leetspeak: Số/Ký tự đặc biệt -> Chữ cái
+# Chỉ áp dụng khi nghi ngờ từ nhạy cảm
+
+# === SỐ -> CHỮ ===
+"0": "o"
+"1": "i"
+"3": "e"
+"4": "a"
+"5": "s"
+"7": "t"
+"8": "b"
+"9": "g"
+
+# === KÝ TỰ ĐẶC BIỆT -> CHỮ ===
+"@": "a"
+"$": "s"
+"! ": "i"
+"|": "i"
+"+": "t"
+
+# === TỪ LEETSPEAK PHỔ BIẾN (cần cẩn thận) ===
+"n9u": "ngu"
+"ng0": "ngo"
+"ch0": "cho"
+"d1t": "dit"
+"đ1t": "địt"
+"l0n": "lon"
+"c4c": "cac"
+"m3": "me"
+"m4y": "may"
+"t40": "tao"

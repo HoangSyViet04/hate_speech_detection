@@ -1,0 +1,48 @@
+# Cấu hình chung cho dự án Hate Speech Detection
+
+# Đường dẫn
+paths:
+  raw_data: "data/raw/"
+  processed_data: "data/processed/"
+  dictionaries: "data/dictionaries/"
+  models: "models/"
+
+# Cấu hình pipeline
+pipeline:
+  # Bước 1: Unicode
+  unicode:
+    remove_invisibles: true
+    normalize_whitespace: true
+    map_confusables: true
+
+  # Bước 3: Evasion
+  evasion:
+    max_junk_length: 3          # Số ký tự rác tối đa được phép nối
+    enable_leetspeak: true
+    enable_censor_decode: true
+
+  # Bước 4: Elongation
+  elongation:
+    max_repeat: 2               # Co cụm về tối đa 2 ký tự
+    extract_features: true
+
+  # Bước 5: Emoji
+  emoji:
+    demojize: true
+    normalize_ascii_emoticons: true
+
+  # Bước 7: Negation
+  negation:
+    window_size: 4              # Số từ sau phủ định được đánh dấu
+    mark_suffix: "_NEG"
+ 
+  # Bước 8: Tách từ (Word Segmentation)
+    tokenization:
+      tool: "pyvi"
+      lowercase: true
+
+# Nhãn
+labels:
+  - "clean"       # Sạch, không có gì
+  - "offensive"   # Xúc phạm nhẹ
+  - "hate"        # Hate speech nặng
