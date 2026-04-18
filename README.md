@@ -10,101 +10,28 @@
 
 ---
 
-## ✨ Điểm nổi bật
+## Tổng quan
 
-| | Tính năng | Mô tả |
-|---|---|---|
-| 🔬 | **NLP Pipeline 8 bước** | Xử lý Unicode, lách luật (evasion), teencode, emoji, negation, word segmentation |
-| 🧠 | **Dual-Model** | Bi-LSTM (offline, ~10ms) + Qwen2.5 qua Ollama (LLM, ngữ cảnh sâu hơn) |
-| ⚡ | **FastAPI Backend** | REST API chuẩn, load model 1 lần duy nhất, swagger docs tự động |
-| 💬 | **Chatbot Web** | Giao diện dark-mode, chọn model realtime, hiển thị xác suất 3 nhãn |
-| 🤖 | **Telegram Bot** | Tự động xóa tin HATE trong group, cảnh cáo người dùng |
-| 🔌 | **Decoupled Design** | Bot và Frontend chỉ gọi API → đổi model không cần sửa client |
+**ViHateGuard** là hệ thống phát hiện ngôn từ thù ghét tiếng Việt, hỗ trợ 2 mô hình AI:
+
+| Mô hình | Loại | Đặc điểm |
+|---------|------|----------|
+| **Bi-LSTM** | Deep Learning (PyTorch) | Nhanh, nhẹ, chạy offline hoàn toàn |
+| **Qwen2.5** | LLM qua Ollama | Hiểu ngữ cảnh sâu hơn, cần Ollama server |
+
+Hệ thống phân loại bình luận thành **3 nhãn**:
+- `CLEAN` — Sạch, bình thường
+- `OFFENSIVE` — Thô tục, xúc phạm nhẹ
+- `HATE` — Ngôn từ thù ghét, kích động
+---
+
+## Kiến trúc hệ thống
+
+![System Architecture](image/image.png)
 
 ---
 
-## 🏗️ Kiến trúc hệ thống
-
-![System Architecture](image/architecture.png)
-
-```mermaid
-graph TD
-    subgraph Clients["📱 Clients"]
-        A["🌐 Chatbot Web<br/><i>frontend/index.html</i>"]
-        B["🤖 Telegram Bot<br/><i>bot/telegram_bot.py</i>"]
-    end
-
-    subgraph API["⚡ FastAPI Backend — api/api.py"]
-        C["POST /predict<br/>{text, model}"]
-        D["GET /health"]
-        E{"Chọn model"}
-        F["🧠 Bi-LSTM<br/>PyTorch · CUDA · ~10ms"]
-        G["💬 Qwen2.5<br/>Ollama · LLM · ~1-5s"]
-    end
-
-    subgraph Pipeline["🔬 NLP Pipeline — src/pipeline/"]
-        P1["1 · Unicode"] --> P2["2 · Placeholder"]
-        P2 --> P3["3 · Evasion<br/><i>g.i.ế.t → giết</i>"]
-        P3 --> P4["4 · Elongation<br/><i>nguuuu → nguu</i>"]
-        P4 --> P5["5 · Emoji · 😡→:angry:"]
-        P5 --> P6["6 · Teencode<br/><i>dm → địt_mẹ</i>"]
-        P6 --> P7["7 · Negation"]
-        P7 --> P8["8 · Word Segmenter<br/><i>PyVi</i>"]
-    end
-
-    subgraph Result["📊 Output"]
-        R1["✅ CLEAN"]
-        R2["⚠️ OFFENSIVE"]
-        R3["🚫 HATE"]
-    end
-
-    A -->|"HTTP POST /predict"| C
-    B -->|"HTTP POST /predict"| C
-    C --> E
-    E -->|"model=bilstm"| F
-    E -->|"model=qwen2.5"| G
-    F --> P1
-    G --> P1
-    P8 --> R1
-    P8 --> R2
-    P8 --> R3
-    R3 -->|"Telegram: xóa tin + cảnh cáo"| B
-```
-
----
-
-## 🔄 Luồng xử lý tin nhắn (Sequence Diagram)
-
-```mermaid
-sequenceDiagram
-    actor User as 👤 User
-    participant TG as 📱 Telegram Group
-    participant Bot as 🤖 Telegram Bot
-    participant API as ⚡ FastAPI
-    participant NLP as 🔬 NLP Pipeline
-    participant Model as 🧠 Bi-LSTM
-
-    User->>TG: Gửi bình luận
-    TG->>Bot: Webhook / Polling event
-    Bot->>API: POST /predict {text}
-    API->>NLP: process_text(text)
-    Note over NLP: Unicode → Placeholder → Evasion<br/>→ Elongation → Emoji → Teencode<br/>→ Negation → Word Segment
-    NLP-->>API: cleaned_text
-    API->>Model: encode + inference
-    Model-->>API: probabilities [clean, offensive, hate]
-    API-->>Bot: {label: "HATE", confidence: 0.75}
-
-    alt label == HATE
-        Bot->>TG: ❌ Xóa tin nhắn vi phạm
-        Bot->>TG: 🚫 Gửi cảnh cáo công khai
-    else label == OFFENSIVE / CLEAN
-        Bot->>Bot: Bỏ qua
-    end
-```
-
----
-
-## 🔬 NLP Pipeline (8 bước)
+## NLP Pipeline (8 bước)
 
 Mọi bình luận đều qua pipeline trước khi vào model — đây là lớp phòng thủ chống lại các kỹ thuật **lách luật** phổ biến trên mạng xã hội Việt Nam:
 
@@ -130,7 +57,7 @@ flowchart LR
     S6["⑥ Teencode\nHandler"]
     S7["⑦ Negation\nHandler"]
     S8["⑧ Word\nSegmenter"]
-    OUT(["🧠 Model Input<br/><i>'địt_mẹ bọn này chết hết đi'</i>"])
+    OUT(["Model Input<br/><i>'Clean text'</i>"])
 
     IN --> S1 --> S2 --> S3 --> S4 --> S5 --> S6 --> S7 --> S8 --> OUT
 
@@ -142,7 +69,7 @@ flowchart LR
 
 ---
 
-## 📊 Kết quả mô hình
+## Kết quả mô hình
 
 Phân loại 3 nhãn trên tập **ViHSD**:
 
@@ -158,7 +85,7 @@ Phân loại 3 nhãn trên tập **ViHSD**:
 
 ---
 
-## 🚀 Cài đặt & Chạy nhanh
+## Cài đặt & Chạy nhanh
 
 ### 1. Clone & cài đặt
 
@@ -185,10 +112,10 @@ API_BASE_URL = http://127.0.0.1:8000
 # ① Backend + Chatbot Web (bắt buộc)
 python -m uvicorn api.api:app --host 0.0.0.0 --port 8000
 
-# ② Ollama — nếu muốn dùng Qwen2.5 (tuỳ chọn)
+# ② Ollama — nếu muốn dùng Qwen2.5 (tuỳ chọn) (nếu cần )
 ollama pull qwen2.5 && ollama serve
 
-# ③ Telegram Bot — nếu muốn kiểm duyệt group (tuỳ chọn)
+# ③ Telegram Bot — nếu muốn kiểm duyệt group 
 python -m bot.telegram_bot
 ```
 
@@ -200,34 +127,30 @@ python -m bot.telegram_bot
 
 ---
 
-## 🌐 API
+## Telegram Bot
 
-### `POST /predict`
+### Các lệnh
 
-```json
-// Request
-{ "text": "đm thg này ngu vl", "model": "bilstm" }
+| Lệnh | Mô tả |
+|-------|--------|
+| `/start` | Hiển thị thông tin bot |
+| `/check <nội dung>` | Kiểm tra thủ công 1 bình luận |
 
-// Response
-{
-  "label": "HATE",
-  "label_vi": "Thù ghét",
-  "confidence": 0.753,
-  "probabilities": { "clean": 0.009, "offensive": 0.238, "hate": 0.753 },
-  "cleaned_text": "địt_mẹ thằng này ngu vậy_luôn",
-  "model_used": "bilstm"
-}
-```
+### Hoạt động tự động trong Group
 
-Tham số `model`: `"bilstm"` (mặc định) hoặc `"qwen2.5"`
+1. Bot lắng nghe **mọi tin nhắn text** trong group
+2. Gửi text tới API backend (`POST /predict` với model mặc định = bilstm)
+3. Nếu kết quả = **HATE**:
+   - **Xóa tin nhắn** vi phạm
+   - **Gửi cảnh cáo**: _"Bình luận của bạn đã bị xóa do vi phạm tiêu chuẩn cộng đồng"_
+4. Nếu kết quả = CLEAN hoặc OFFENSIVE → bỏ qua
 
----
+### Thiết lập Bot Telegram
 
-## 🤖 Telegram Bot
-
-- **`/start`** — Giới thiệu bot
-- **`/check <nội dung>`** — Kiểm tra thủ công
-- **Auto-moderate** — Tự động xóa tin HATE trong group và gửi cảnh cáo
+1. Mở Telegram, tìm `@BotFather` → `/newbot` → đặt tên → nhận **API Token**
+2. Paste token vào file `.env` (dòng `api_token = ...`)
+3. Kéo bot vào group → cấp quyền **Admin** (cần quyền Delete Messages)
+4. Chạy backend trước, sau đó chạy bot
 
 > Yêu cầu: Bot phải có quyền **Admin + Delete Messages** trong group.
 
@@ -268,7 +191,7 @@ hate_speech_detection/
 
 ---
 
-## 📄 Dataset & Citation
+## Dataset & Citation
 
 Dự án sử dụng bộ dữ liệu **ViHSD** — [HuggingFace](https://huggingface.co/datasets/sonlam1102/vihsd) | [Paper](https://link.springer.com/chapter/10.1007/978-3-030-79457-6_35)
 

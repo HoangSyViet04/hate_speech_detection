@@ -17,3 +17,8 @@ venv/
 
 # Logs
 *.log
+
+# Ignore local test files
+test.ipynb
+
+docs/

@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ViHateGuard - Chatbot</title>
+    <style>
+        :root {
+            --bg: #0f0f23;
+            --surface: #1a1a2e;
+            --surface2: #16213e;
+            --primary: #0f3460;
+            --accent: #e94560;
+            --green: #2ecc71;
+            --yellow: #f1c40f;
+            --red: #e74c3c;
+            --text: #eaeaea;
+            --text-muted: #8892b0;
+            --border: #233554;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ─── Header ─── */
+        .header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .header .logo {
+            width: 40px; height: 40px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), var(--primary));
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px;
+        }
+        .header h1 { font-size: 1.2rem; font-weight: 600; }
+        .header .subtitle { font-size: 0.8rem; color: var(--text-muted); }
+        .status-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            background: var(--green); margin-left: auto;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        /* ─── Chat area ─── */
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .message {
+            max-width: 75%;
+            padding: 12px 16px;
+            border-radius: 16px;
+            line-height: 1.5;
+            font-size: 0.95rem;
+            animation: fadeIn 0.3s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+            align-self: flex-end;
+            background: var(--primary);
+            border-bottom-right-radius: 4px;
+        }
+        .message.bot {
+            align-self: flex-start;
+            background: var(--surface2);
+            border-bottom-left-radius: 4px;
+            border: 1px solid var(--border);
+        }
+
+        /* Result card inside bot message */
+        .result-card { margin-top: 10px; }
+        .result-label {
+            font-size: 1.1rem; font-weight: 700;
+            padding: 6px 14px; border-radius: 8px;
+            display: inline-block; margin-bottom: 8px;
+        }
+        .label-clean      { background: rgba(46,204,113,0.15); color: var(--green); }
+        .label-offensive   { background: rgba(241,196,15,0.15); color: var(--yellow); }
+        .label-hate        { background: rgba(231,76,60,0.15);  color: var(--red); }
+
+        .prob-bars { margin-top: 8px; }
+        .prob-row {
+            display: flex; align-items: center; gap: 8px;
+            margin-bottom: 6px; font-size: 0.85rem;
+        }
+        .prob-name { width: 70px; text-align: right; color: var(--text-muted); }
+        .prob-track {
+            flex: 1; height: 8px; background: var(--bg);
+            border-radius: 4px; overflow: hidden;
+        }
+        .prob-fill {
+            height: 100%; border-radius: 4px;
+            transition: width 0.6s ease;
+        }
+        .prob-val { width: 50px; font-weight: 600; font-size: 0.8rem; }
+
+        .cleaned-text {
+            margin-top: 8px; padding: 8px 12px;
+            background: var(--bg); border-radius: 8px;
+            font-size: 0.82rem; color: var(--text-muted);
+            border: 1px solid var(--border);
+        }
+        .cleaned-text span { color: var(--text); }
+
+        /* ─── Typing indicator ─── */
+        .typing { display: flex; gap: 4px; padding: 8px 0; }
+        .typing span {
+            width: 8px; height: 8px; border-radius: 50%;
+            background: var(--text-muted);
+            animation: bounce 1.4s infinite both;
+        }
+        .typing span:nth-child(2) { animation-delay: 0.16s; }
+        .typing span:nth-child(3) { animation-delay: 0.32s; }
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+
+        /* ─── Input area ─── */
+        .input-area {
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+            padding: 16px 24px;
+            display: flex;
+            gap: 12px;
+        }
+        .input-area textarea {
+            flex: 1;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px 16px;
+            color: var(--text);
+            font-size: 0.95rem;
+            resize: none;
+            outline: none;
+            font-family: inherit;
+            min-height: 48px;
+            max-height: 120px;
+        }
+        .input-area textarea:focus {
+            border-color: var(--accent);
+        }
+        .input-area textarea::placeholder { color: var(--text-muted); }
+        .send-btn {
+            width: 48px; height: 48px;
+            border-radius: 50%;
+            border: none;
+            background: var(--accent);
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: transform 0.15s, opacity 0.15s;
+            align-self: flex-end;
+        }
+        .send-btn:hover { transform: scale(1.08); }
+        .send-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+        /* ─── Sample chips ─── */
+        .samples {
+            padding: 12px 24px;
+            display: flex; gap: 8px; flex-wrap: wrap;
+        }
+        .chip {
+            padding: 6px 14px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+            white-space: nowrap;
+        }
+        .chip:hover {
+            background: var(--primary);
+            color: var(--text);
+        }
+
+        /* ─── Model selector ─── */
+        .model-bar {
+            padding: 8px 24px;
+            display: flex; align-items: center; gap: 12px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+        }
+        .model-bar label {
+            font-size: 0.82rem; color: var(--text-muted); font-weight: 500;
+        }
+        .model-toggle {
+            display: flex; border-radius: 8px; overflow: hidden;
+            border: 1px solid var(--border);
+        }
+        .model-toggle button {
+            padding: 6px 16px; border: none; cursor: pointer;
+            font-size: 0.82rem; font-family: inherit;
+            background: var(--bg); color: var(--text-muted);
+            transition: background 0.2s, color 0.2s;
+        }
+        .model-toggle button.active {
+            background: var(--accent); color: white; font-weight: 600;
+        }
+        .model-toggle button:not(.active):hover {
+            background: var(--surface2); color: var(--text);
+        }
+        .model-status {
+            margin-left: auto; font-size: 0.78rem; color: var(--text-muted);
+        }
+        .model-status .dot {
+            display: inline-block; width: 6px; height: 6px;
+            border-radius: 50%; margin-right: 4px; vertical-align: middle;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <div class="header">
+        <div class="logo">🛡️</div>
+        <div>
+            <h1>ViHateGuard</h1>
+            <div class="subtitle">Hệ thống phát hiện ngôn từ thù ghét tiếng Việt</div>
+        </div>
+        <div class="status-dot" id="statusDot" title="API Connected"></div>
+    </div>
+
+    <!-- Model selector -->
+    <div class="model-bar">
+        <label>🤖 Mô hình:</label>
+        <div class="model-toggle" id="modelToggle">
+            <button class="active" data-model="bilstm">Bi-LSTM</button>
+            <button data-model="qwen2.5">Qwen2.5 (Ollama)</button>
+        </div>
+        <div class="model-status" id="modelStatus"></div>
+    </div>
+
+    <!-- Sample chips -->
+    <div class="samples" id="samples">
+        <div class="chip" data-text="Sản phẩm này dùng rất tốt, mình rất thích.">✅ Câu sạch</div>
+        <div class="chip" data-text="Shop làm ăn như cái quần què, phí tiền.">⚠️ Thô lỗ</div>
+        <div class="chip" data-text="Bọn này kỳ này sống chó thật, cút đi.">🚫 Thù ghét</div>
+        <div class="chip" data-text="Đ.m bọn này chếtttttttttt hết đi, r.á.c r.ư.ở.i xh">🔥 Lách luật</div>
+        <div class="chip" data-text="thằng này t. ox. ic thật">🕵️ Evasion</div>
+    </div>
+
+    <!-- Chat -->
+    <div class="chat-container" id="chat">
+        <div class="message bot">
+            Xin chào các con vợ🫰. Tôi là <b>ViHateGuard Bot</b>. Hãy gửi cho tôi một bình luận để tôi phân tích xem nó có chứa ngôn từ thù ghét hay không. 🛡️
+        </div>
+    </div>
+
+    <!-- Input -->
+    <div class="input-area">
+        <textarea id="input" placeholder="Nhập bình luận để kiểm tra..." rows="1"></textarea>
+        <button class="send-btn" id="sendBtn" title="Gửi">➤</button>
+    </div>
+
+<script>
+    const API_URL = window.location.origin;
+    const chat = document.getElementById('chat');
+    const input = document.getElementById('input');
+    const sendBtn = document.getElementById('sendBtn');
+    const statusDot = document.getElementById('statusDot');
+    const modelStatus = document.getElementById('modelStatus');
+
+    let selectedModel = 'bilstm';
+
+    // ── Model toggle ──
+    document.querySelectorAll('#modelToggle button').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('#modelToggle button').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            selectedModel = btn.dataset.model;
+        });
+    });
+
+    // ── Auto-resize textarea ──
+    input.addEventListener('input', () => {
+        input.style.height = 'auto';
+        input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+    });
+
+    // ── Send on Enter (Shift+Enter = newline) ──
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            send();
+        }
+    });
+    sendBtn.addEventListener('click', send);
+
+    // ── Sample chips ──
+    document.querySelectorAll('.chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+            input.value = chip.dataset.text;
+            input.dispatchEvent(new Event('input'));
+            send();
+        });
+    });
+
+    // ── Health check ──
+    fetch(API_URL + '/health')
+        .then(r => r.json())
+        .then(d => {
+            statusDot.style.background = '#2ecc71';
+            const m = d.models || {};
+            const bilstmOk = m.bilstm !== false;
+            const qwenOk = m['qwen2.5'] === true;
+            modelStatus.innerHTML =
+                `<span class="dot" style="background:${bilstmOk ? '#2ecc71' : '#e74c3c'}"></span>BiLSTM` +
+                `&nbsp;&nbsp;<span class="dot" style="background:${qwenOk ? '#2ecc71' : '#e74c3c'}"></span>Qwen2.5`;
+        })
+        .catch(() => { statusDot.style.background = '#e74c3c'; });
+
+    // ── Main send function ──
+    async function send() {
+        const text = input.value.trim();
+        if (!text) return;
+
+        // User message
+        appendMessage(text, 'user');
+        input.value = '';
+        input.style.height = 'auto';
+        sendBtn.disabled = true;
+
+        // Typing indicator
+        const typing = appendTyping();
+
+        try {
+            const res = await fetch(API_URL + '/predict', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text, model: selectedModel }),
+            });
+
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            typing.remove();
+            appendResult(data);
+        } catch (err) {
+            typing.remove();
+            appendMessage('Không thể kết nối tới API. Hãy chắc chắn server đang chạy.', 'bot');
+        }
+
+        sendBtn.disabled = false;
+        chat.scrollTop = chat.scrollHeight;
+    }
+
+    function appendMessage(text, who) {
+        const div = document.createElement('div');
+        div.className = `message ${who}`;
+        div.textContent = text;
+        chat.appendChild(div);
+        chat.scrollTop = chat.scrollHeight;
+        return div;
+    }
+
+    function appendTyping() {
+        const div = document.createElement('div');
+        div.className = 'message bot';
+        div.innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
+        chat.appendChild(div);
+        chat.scrollTop = chat.scrollHeight;
+        return div;
+    }
+
+    function appendResult(data) {
+        const p = data.probabilities;
+        const colors = { clean: '#2ecc71', offensive: '#f1c40f', hate: '#e74c3c' };
+        const cls = data.label.toLowerCase();
+        const labelClass = `label-${cls}`;
+
+        const icons = { CLEAN: '✅', OFFENSIVE: '⚠️', HATE: '🚫' };
+        const icon = icons[data.label] || '';
+
+        const div = document.createElement('div');
+        div.className = 'message bot';
+        div.innerHTML = `
+            <div class="result-card">
+                <div class="result-label ${labelClass}">${icon} ${data.label} — ${data.label_vi}</div>
+                <div style="font-size:0.85rem;color:var(--text-muted);">Độ tin cậy: <b style="color:var(--text)">${(data.confidence * 100).toFixed(1)}%</b> &nbsp;|&nbsp; Model: <b style="color:var(--accent)">${data.model_used || 'bilstm'}</b></div>
+                <div class="prob-bars">
+                    ${probRow('Sạch',      p.clean,     colors.clean)}
+                    ${probRow('Thô lỗ',    p.offensive, colors.offensive)}
+                    ${probRow('Thù ghét',  p.hate,      colors.hate)}
+                </div>
+                <div class="cleaned-text">
+                    Pipeline output: <span>${escapeHtml(data.cleaned_text)}</span>
+                </div>
+            </div>
+        `;
+        chat.appendChild(div);
+        chat.scrollTop = chat.scrollHeight;
+    }
+
+    function probRow(name, val, color) {
+        const pct = (val * 100).toFixed(1);
+        return `
+            <div class="prob-row">
+                <div class="prob-name">${name}</div>
+                <div class="prob-track"><div class="prob-fill" style="width:${pct}%;background:${color}"></div></div>
+                <div class="prob-val" style="color:${color}">${pct}%</div>
+            </div>`;
+    }
+
+    function escapeHtml(str) {
+        const d = document.createElement('div');
+        d.textContent = str;
+        return d.innerHTML;
+    }
+</script>
+</body>
+</html>

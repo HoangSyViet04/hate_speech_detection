@@ -7,9 +7,9 @@ tqdm
 joblib
 
 # --- Deep Learning (PyTorch) ---
-torch==2.2.2+cu118 torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
-torchvision
-torchaudio
+# torch==2.2.2+cu118 torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+# torchvision
+# torchaudio
 
 # --- NLP & Text Processing ---
 emoji
@@ -25,3 +25,8 @@ python-multipart
 # --- Visualization ---
 matplotlib
 seaborn
+
+# --- Bot & API Client ---
+python-telegram-bot
+python-dotenv
+httpx
